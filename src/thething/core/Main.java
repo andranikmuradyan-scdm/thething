@@ -1,4 +1,4 @@
-package thething;
+package thething.core;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
