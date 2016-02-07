@@ -7,6 +7,7 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -27,6 +28,7 @@ import javax.swing.JTextField;
 import javax.swing.SpinnerDateModel;
 import javax.swing.border.LineBorder;
 
+import net.finmath.applications.spreadsheets.CSV2XLSX;
 import net.finmath.applications.spreadsheets.CalibrateCCSCurveSheets;
 import net.finmath.applications.spreadsheets.CalibrateCurveSheets;
 
@@ -40,8 +42,8 @@ public class Main {
   private JTextField txtIssuerCurveFile;
   private JTextField txtResultFilePrefix;
   private JTextField txtPathToCalibrationData;
-  private JTextField txtCSVFile;
-  private JTextField txtXLSXFile;
+  private JTextField txtCSVFilePath;
+  private JTextField txtXLSXFilePath;
   private JTextField txtXLSXTemplateFile;
   private JTextField txtConversionOutput;
   private JCheckBox chbEur;
@@ -226,16 +228,16 @@ public class Main {
     lblPathToCsvs.setBounds(14, 74, 100, 14);
     pnlCSVXLSX.add(lblPathToCsvs);
 
-    txtCSVFile = new JTextField();
-    txtCSVFile.setColumns(10);
-    txtCSVFile.setBounds(112, 71, 453, 20);
-    pnlCSVXLSX.add(txtCSVFile);
+    txtCSVFilePath = new JTextField();
+    txtCSVFilePath.setColumns(10);
+    txtCSVFilePath.setBounds(112, 71, 453, 20);
+    pnlCSVXLSX.add(txtCSVFilePath);
 
     JButton btnOpenPathToCSVs = new JButton("...");
     btnOpenPathToCSVs.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         fc.setDialogTitle("Select the CSV to convert");
-        txtCSVFile.setText(getSelectedFileOrFolder(false));
+        txtCSVFilePath.setText(getSelectedFileOrFolder(true));
       }
     });
     btnOpenPathToCSVs.setBounds(575, 70, 55, 23);
@@ -246,16 +248,16 @@ public class Main {
     lblPathToXlsxs.setBounds(14, 103, 100, 14);
     pnlCSVXLSX.add(lblPathToXlsxs);
 
-    txtXLSXFile = new JTextField();
-    txtXLSXFile.setColumns(10);
-    txtXLSXFile.setBounds(117, 100, 448, 20);
-    pnlCSVXLSX.add(txtXLSXFile);
+    txtXLSXFilePath = new JTextField();
+    txtXLSXFilePath.setColumns(10);
+    txtXLSXFilePath.setBounds(117, 100, 448, 20);
+    pnlCSVXLSX.add(txtXLSXFilePath);
 
     JButton btnOpenPathToXLSX = new JButton("...");
     btnOpenPathToXLSX.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         fc.setDialogTitle("Select the XLSX to convert");
-        txtXLSXFile.setText(getSelectedFileOrFolder(false));
+        txtXLSXFilePath.setText(getSelectedFileOrFolder(true));
       }
     });
     btnOpenPathToXLSX.setBounds(575, 99, 55, 23);
@@ -287,6 +289,20 @@ public class Main {
     pnlCSVXLSX.add(lblConversionOutput);
 
     JButton btnStartConversion = new JButton("Start conversion");
+    btnStartConversion.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        String CSVPath = txtCSVFilePath.getText();
+        String XLSXPath = txtXLSXFilePath.getText();
+        String XLSXTemplate = txtXLSXTemplateFile.getText();
+        
+        try {
+          if(Validator.validateCSVToXLSXConversionInput(CSVPath, XLSXPath, XLSXTemplate)) {
+            CSV2XLSX.convertAll(CSVPath, XLSXPath, XLSXTemplate);
+          }
+        } catch (IOException e1) {
+        }
+      }
+    });
     btnStartConversion.setFont(new Font("Tahoma", Font.PLAIN, 20));
     btnStartConversion.setBounds(6, 432, 302, 57);
     pnlCSVXLSX.add(btnStartConversion);
@@ -519,6 +535,9 @@ public class Main {
     if (isFolder) {
       fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
       fc.setAcceptAllFileFilterUsed(false);
+    } else {
+      fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+      fc.setAcceptAllFileFilterUsed(true);
     }
 
     int returnVal = fc.showOpenDialog(frmThething);

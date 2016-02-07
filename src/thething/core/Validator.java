@@ -15,7 +15,6 @@ public class Validator {
   }
   
   public static boolean validateCalibrationInput(String pathToData, boolean isCCX) throws Exception{
-    boolean isValid = true;
     
     File fCurves = new File(pathToData + "/curves");
     
@@ -23,21 +22,29 @@ public class Validator {
       File fRates = new File(pathToData + "/rates");
       
       if(!fCurves.exists() || !fRates.exists())
-        isValid = false;
+        return false;
     } else {
       File fCCXRates = new File(pathToData + "rates-crosscurrency");
       if(!fCurves.exists() || !fCCXRates.exists())
-        isValid = false;
+        return false;
     }
     
-    return isValid;
+    return true;
   }
   
-  public static boolean validateCSVToXLSXConversionInput() {
-    boolean isValid = false;
+  public static boolean validateCSVToXLSXConversionInput(String pathToCSVs, String pathToXLSXs, String templateXLSX) {
+    File folderCSV = new File(pathToCSVs);
+    File folderXLSX = new File(pathToXLSXs);
     
+    if(!folderCSV.exists() || !folderCSV.isDirectory() || folderCSV.list().length == 0)
+      return false;
     
+    if(!folderXLSX.exists() || !folderXLSX.isDirectory())
+      return false;
     
-    return isValid;
+    if(!templateXLSX.endsWith(".xlsx"))
+      return false;
+    
+    return true;
   }
 }
