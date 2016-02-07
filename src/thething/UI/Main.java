@@ -1,4 +1,4 @@
-package thething.core;
+package thething.UI;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -33,6 +33,9 @@ import javax.swing.border.LineBorder;
 import net.finmath.applications.spreadsheets.CSV2XLSX;
 import net.finmath.applications.spreadsheets.CalibrateCCSCurveSheets;
 import net.finmath.applications.spreadsheets.CalibrateCurveSheets;
+import thething.util.UIOutputStream;
+import thething.util.Validator;
+
 import javax.swing.JScrollPane;
 
 public class Main {

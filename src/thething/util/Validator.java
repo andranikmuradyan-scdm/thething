@@ -1,4 +1,4 @@
-package thething.core;
+package thething.util;
 
 import java.io.File;
 import java.util.List;

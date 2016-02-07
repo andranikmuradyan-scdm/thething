@@ -1,4 +1,4 @@
-package thething.core;
+package thething.util;
 
 import javax.swing.JOptionPane;
 
