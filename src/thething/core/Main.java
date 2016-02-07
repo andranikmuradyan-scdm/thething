@@ -8,6 +8,7 @@ import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -24,6 +25,7 @@ import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SpinnerDateModel;
 import javax.swing.border.LineBorder;
@@ -31,6 +33,7 @@ import javax.swing.border.LineBorder;
 import net.finmath.applications.spreadsheets.CSV2XLSX;
 import net.finmath.applications.spreadsheets.CalibrateCCSCurveSheets;
 import net.finmath.applications.spreadsheets.CalibrateCurveSheets;
+import javax.swing.JScrollPane;
 
 public class Main {
 
@@ -45,7 +48,7 @@ public class Main {
   private JTextField txtCSVFilePath;
   private JTextField txtXLSXFilePath;
   private JTextField txtXLSXTemplateFile;
-  private JTextField txtConversionOutput;
+  private JTextArea txtConversionOutput;
   private JCheckBox chbEur;
   private JCheckBox chbGbp;
   private JCheckBox chbJpy;
@@ -124,13 +127,13 @@ public class Main {
     // ---------------------------------------------------------------
 
     JLabel lblPathToCalibrationData = new JLabel("Path to data");
-    lblPathToCalibrationData.setBounds(10, 133, 120, 14);
+    lblPathToCalibrationData.setBounds(12, 88, 120, 14);
     lblPathToCalibrationData.setFont(new Font("Tahoma", Font.BOLD, 12));
     pnlPricing.add(lblPathToCalibrationData);
 
     txtPathToCalibrationData = new JTextField();
     txtPathToCalibrationData.setColumns(10);
-    txtPathToCalibrationData.setBounds(110, 130, 450, 20);
+    txtPathToCalibrationData.setBounds(112, 85, 450, 20);
     pnlPricing.add(txtPathToCalibrationData);
 
     JButton btnOpenCalibrationPathToData = new JButton("...");
@@ -142,7 +145,7 @@ public class Main {
         txtPathToCalibrationData.setText(getSelectedFileOrFolder(true));
       }
     });
-    btnOpenCalibrationPathToData.setBounds(571, 129, 55, 23);
+    btnOpenCalibrationPathToData.setBounds(573, 84, 55, 23);
     pnlPricing.add(btnOpenCalibrationPathToData);
 
     JButton btnStopCalibration = new JButton("Stop calibration");
@@ -151,7 +154,7 @@ public class Main {
       }
     });
     btnStopCalibration.setFont(new Font("Tahoma", Font.BOLD, 14));
-    btnStopCalibration.setBounds(443, 279, 183, 42);
+    btnStopCalibration.setBounds(445, 234, 183, 42);
     pnlPricing.add(btnStopCalibration);
 
     JButton btnStartCrosscurrencyCalibration = new JButton(
@@ -168,19 +171,19 @@ public class Main {
       }
     });
     btnStartCrosscurrencyCalibration.setFont(new Font("Tahoma", Font.BOLD, 14));
-    btnStartCrosscurrencyCalibration.setBounds(10, 433, 301, 42);
+    btnStartCrosscurrencyCalibration.setBounds(12, 388, 301, 42);
     pnlPricing.add(btnStartCrosscurrencyCalibration);
 
     JLabel lblCalibratingCurveFile = new JLabel(
         "<HTML>Calibrating curve file from 'rates' folder, writing results <br>to 'curves' folder.");
     lblCalibratingCurveFile.setFont(new Font("Tahoma", Font.PLAIN, 20));
-    lblCalibratingCurveFile.setBounds(10, 210, 616, 62);
+    lblCalibratingCurveFile.setBounds(12, 165, 616, 62);
     pnlPricing.add(lblCalibratingCurveFile);
 
     JLabel lblcalibratingCurveFile = new JLabel(
         "<HTML>Calibrating curve file from 'rates-crosscurrency' folder, <br>writing results to 'curves' folder.");
     lblcalibratingCurveFile.setFont(new Font("Tahoma", Font.PLAIN, 20));
-    lblcalibratingCurveFile.setBounds(10, 349, 616, 72);
+    lblcalibratingCurveFile.setBounds(12, 304, 616, 72);
     pnlPricing.add(lblcalibratingCurveFile);
 
     JButton btnStartCalibration = new JButton("Start calibration");
@@ -211,13 +214,13 @@ public class Main {
       }
     });
     btnStartCalibration.setFont(new Font("Dialog", Font.BOLD, 14));
-    btnStartCalibration.setBounds(10, 279, 183, 42);
+    btnStartCalibration.setBounds(12, 234, 183, 42);
     pnlPricing.add(btnStartCalibration);
 
     JButton btnStopCrosscurrencyCalibration = new JButton(
         "Stop crosscurrency calibration");
     btnStopCrosscurrencyCalibration.setFont(new Font("Dialog", Font.BOLD, 14));
-    btnStopCrosscurrencyCalibration.setBounds(325, 433, 301, 42);
+    btnStopCrosscurrencyCalibration.setBounds(327, 388, 301, 42);
     pnlPricing.add(btnStopCrosscurrencyCalibration);
     JPanel pnlCSVXLSX = new JPanel();
     tabbedPane.addTab("CSV to XLSX", null, pnlCSVXLSX, null);
@@ -297,6 +300,9 @@ public class Main {
         
         try {
           if(Validator.validateCSVToXLSXConversionInput(CSVPath, XLSXPath, XLSXTemplate)) {
+            PrintStream ps = new PrintStream(new UIOutputStream(txtConversionOutput));
+            System.setOut(ps);
+            System.setErr(ps);
             CSV2XLSX.convertAll(CSVPath, XLSXPath, XLSXTemplate);
           }
         } catch (IOException e1) {
@@ -306,13 +312,16 @@ public class Main {
     btnStartConversion.setFont(new Font("Tahoma", Font.PLAIN, 20));
     btnStartConversion.setBounds(6, 432, 302, 57);
     pnlCSVXLSX.add(btnStartConversion);
+    
+    JScrollPane scrollPane = new JScrollPane();
+    scrollPane.setBounds(6, 220, 620, 201);
+    pnlCSVXLSX.add(scrollPane);
 
-    txtConversionOutput = new JTextField();
+    txtConversionOutput = new JTextArea();
+    scrollPane.setViewportView(txtConversionOutput);
     txtConversionOutput.setForeground(Color.WHITE);
     txtConversionOutput.setBackground(Color.BLACK);
     txtConversionOutput.setEnabled(false);
-    txtConversionOutput.setBounds(6, 220, 620, 201);
-    pnlCSVXLSX.add(txtConversionOutput);
     txtConversionOutput.setColumns(10);
 
     JButton btnStopConversion = new JButton("Stop conversion");
@@ -451,7 +460,6 @@ public class Main {
         try {
           if (Validator.validateValuationInput(productsFolder, mdFolder, fixingFile, issuserCUrvePrefix, 
               resFilePrefix, valuationDate, currencies)) {
-            
           }
         } catch (Exception ex) {
         }
@@ -487,7 +495,7 @@ public class Main {
     dtpValuationDate = new JSpinner();
     dtpValuationDate.setModel(new SpinnerDateModel(new Date(), null, null,
         Calendar.DAY_OF_WEEK_IN_MONTH));
-    dtpValuationDate.setBounds(164, 382, 108, 20);
+    dtpValuationDate.setBounds(164, 382, 130, 20);
     JSpinner.DateEditor de = new JSpinner.DateEditor(dtpValuationDate,
         "dd-MMM-yyyy");
     dtpValuationDate.setEditor(de);
