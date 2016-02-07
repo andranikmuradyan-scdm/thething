@@ -7,14 +7,18 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JDialog;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
@@ -23,20 +27,29 @@ import javax.swing.JTextField;
 import javax.swing.SpinnerDateModel;
 import javax.swing.border.LineBorder;
 
+import net.finmath.applications.spreadsheets.CalibrateCurveSheets;
+
 public class Main {
 
   private JFrame frmThething;
-  private JTextField txtPathToPricingData;
+  private JSplitPane splitPane;
   private JTextField txtProductsFolder;
   private JTextField txtMDFolder;
   private JTextField txtFixingFile;
   private JTextField txtIssuerCurveFile;
   private JTextField txtResultFilePrefix;
   private JTextField txtPathToCalibrationData;
-  private JTextField txtPathToCSV;
-  private JTextField txtPathToXLSX;
+  private JTextField txtCSVFile;
+  private JTextField txtXLSXFile;
   private JTextField txtXLSXTemplateFile;
   private JTextField txtConversionOutput;
+  private JCheckBox chbEur;
+  private JCheckBox chbGbp;
+  private JCheckBox chbJpy;
+  private JCheckBox chbUsd;
+  private JSpinner dtpValuationDate;
+
+  private final JFileChooser fc = new JFileChooser();
 
   /**
    * Launch the application.
@@ -71,9 +84,10 @@ public class Main {
     frmThething.setBounds(100, 100, 657, 659);
     frmThething.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-    JSplitPane splitPane = new JSplitPane() {
+    splitPane = new JSplitPane() {
       private static final long serialVersionUID = 1L;
       private final int location = 530;
+
       {
         setDividerLocation(location);
       }
@@ -105,43 +119,103 @@ public class Main {
     // ---------------------------------------------------------------
     // CALIBRATION TAB -----------------------------------------------
     // ---------------------------------------------------------------
-    
+
     JLabel lblPathToCalibrationData = new JLabel("Path to data");
-    lblPathToCalibrationData.setBounds(10, 184, 120, 14);
+    lblPathToCalibrationData.setBounds(10, 133, 120, 14);
     lblPathToCalibrationData.setFont(new Font("Tahoma", Font.BOLD, 12));
     pnlPricing.add(lblPathToCalibrationData);
 
     txtPathToCalibrationData = new JTextField();
     txtPathToCalibrationData.setColumns(10);
-    txtPathToCalibrationData.setBounds(110, 181, 450, 20);
+    txtPathToCalibrationData.setBounds(110, 130, 450, 20);
     pnlPricing.add(txtPathToCalibrationData);
 
-    JButton button_3 = new JButton("...");
-    button_3.setBounds(571, 180, 55, 23);
-    pnlPricing.add(button_3);
+    JButton btnOpenCalibrationPathToData = new JButton("...");
+    btnOpenCalibrationPathToData.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        // Handle open button action.
+        fc.setDialogTitle("Select the calibration data folder");
 
-    JButton btnCalibrate = new JButton("Calibrate");
-    btnCalibrate.setFont(new Font("Tahoma", Font.PLAIN, 14));
-    btnCalibrate.setBounds(459, 274, 130, 62);
-    pnlPricing.add(btnCalibrate);
+        txtPathToCalibrationData.setText(getSelectedFileOrFolder(true));
+      }
+    });
+    btnOpenCalibrationPathToData.setBounds(571, 129, 55, 23);
+    pnlPricing.add(btnOpenCalibrationPathToData);
 
-    JButton btnCalibrateCreosscurrency = new JButton(
-        "<HTML>Calibrate \r\n<br>crosscurrency");
-    btnCalibrateCreosscurrency.setFont(new Font("Tahoma", Font.PLAIN, 14));
-    btnCalibrateCreosscurrency.setBounds(459, 364, 130, 62);
-    pnlPricing.add(btnCalibrateCreosscurrency);
+    JButton btnStopCalibration = new JButton("Stop calibration");
+    btnStopCalibration.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+      }
+    });
+    btnStopCalibration.setFont(new Font("Tahoma", Font.BOLD, 14));
+    btnStopCalibration.setBounds(443, 279, 183, 42);
+    pnlPricing.add(btnStopCalibration);
+
+    JButton btnStartCrosscurrencyCalibration = new JButton(
+        "Start crosscurrency calibration");
+    btnStartCrosscurrencyCalibration.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        String pathToData = txtPathToCalibrationData.getText();
+
+        try {
+          if (Validator.validateCalibrationInput(pathToData, true))
+            CalibrateCurveSheets.main(new String[] { pathToData });
+        } catch (Exception ex) {
+        }
+      }
+    });
+    btnStartCrosscurrencyCalibration.setFont(new Font("Tahoma", Font.BOLD, 14));
+    btnStartCrosscurrencyCalibration.setBounds(10, 433, 301, 42);
+    pnlPricing.add(btnStartCrosscurrencyCalibration);
 
     JLabel lblCalibratingCurveFile = new JLabel(
-        "<HTML>Calibrating curve file from 'rates' folder, <br>\r\nwriting results to 'curves' folder.");
+        "<HTML>Calibrating curve file from 'rates' folder, writing results <br>to 'curves' folder.");
     lblCalibratingCurveFile.setFont(new Font("Tahoma", Font.PLAIN, 20));
-    lblCalibratingCurveFile.setBounds(10, 274, 439, 62);
+    lblCalibratingCurveFile.setBounds(10, 210, 616, 62);
     pnlPricing.add(lblCalibratingCurveFile);
 
     JLabel lblcalibratingCurveFile = new JLabel(
-        "<HTML>Calibrating curve file from 'rates-crosscurrency'<br>\r\nfolder, writing results to 'curves' folder.");
+        "<HTML>Calibrating curve file from 'rates-crosscurrency' folder, <br>writing results to 'curves' folder.");
     lblcalibratingCurveFile.setFont(new Font("Tahoma", Font.PLAIN, 20));
-    lblcalibratingCurveFile.setBounds(10, 364, 439, 62);
+    lblcalibratingCurveFile.setBounds(10, 349, 616, 72);
     pnlPricing.add(lblcalibratingCurveFile);
+
+    JButton btnStartCalibration = new JButton("Start calibration");
+    btnStartCalibration.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        final String pathToData = txtPathToCalibrationData.getText();
+
+        try {
+          if (Validator.validateCalibrationInput(pathToData, false)) {
+            CalibrateCurveSheets.main(new String[] { pathToData + "/" });
+          }
+//            calibrationThread = new Thread(new Runnable() {
+//
+//              public void run() {
+//                try {
+//                } catch (Exception e) {
+//                }
+//              }
+//            });
+//
+//            calibrationThread.start();
+//          } else {
+//            MessageBox.show("Unable to validate input for calibration.",
+//                "Calibration", JOptionPane.ERROR_MESSAGE);
+//          }
+        } catch (Exception ex) {
+        }
+      }
+    });
+    btnStartCalibration.setFont(new Font("Dialog", Font.BOLD, 14));
+    btnStartCalibration.setBounds(10, 279, 183, 42);
+    pnlPricing.add(btnStartCalibration);
+
+    JButton btnStopCrosscurrencyCalibration = new JButton(
+        "Stop crosscurrency calibration");
+    btnStopCrosscurrencyCalibration.setFont(new Font("Dialog", Font.BOLD, 14));
+    btnStopCrosscurrencyCalibration.setBounds(325, 433, 301, 42);
+    pnlPricing.add(btnStopCrosscurrencyCalibration);
     JPanel pnlCSVXLSX = new JPanel();
     tabbedPane.addTab("CSV to XLSX", null, pnlCSVXLSX, null);
     pnlCSVXLSX.setLayout(null);
@@ -151,28 +225,40 @@ public class Main {
     lblPathToCsvs.setBounds(14, 74, 100, 14);
     pnlCSVXLSX.add(lblPathToCsvs);
 
-    txtPathToCSV = new JTextField();
-    txtPathToCSV.setColumns(10);
-    txtPathToCSV.setBounds(112, 71, 453, 20);
-    pnlCSVXLSX.add(txtPathToCSV);
+    txtCSVFile = new JTextField();
+    txtCSVFile.setColumns(10);
+    txtCSVFile.setBounds(112, 71, 453, 20);
+    pnlCSVXLSX.add(txtCSVFile);
 
-    JButton button_4 = new JButton("...");
-    button_4.setBounds(575, 70, 55, 23);
-    pnlCSVXLSX.add(button_4);
+    JButton btnOpenPathToCSVs = new JButton("...");
+    btnOpenPathToCSVs.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        fc.setDialogTitle("Select the CSV to convert");
+        txtCSVFile.setText(getSelectedFileOrFolder(false));
+      }
+    });
+    btnOpenPathToCSVs.setBounds(575, 70, 55, 23);
+    pnlCSVXLSX.add(btnOpenPathToCSVs);
 
     JLabel lblPathToXlsxs = new JLabel("Path to XLSXs");
     lblPathToXlsxs.setFont(new Font("Tahoma", Font.BOLD, 12));
     lblPathToXlsxs.setBounds(14, 103, 100, 14);
     pnlCSVXLSX.add(lblPathToXlsxs);
 
-    txtPathToXLSX = new JTextField();
-    txtPathToXLSX.setColumns(10);
-    txtPathToXLSX.setBounds(117, 100, 448, 20);
-    pnlCSVXLSX.add(txtPathToXLSX);
+    txtXLSXFile = new JTextField();
+    txtXLSXFile.setColumns(10);
+    txtXLSXFile.setBounds(117, 100, 448, 20);
+    pnlCSVXLSX.add(txtXLSXFile);
 
-    JButton button_5 = new JButton("...");
-    button_5.setBounds(575, 99, 55, 23);
-    pnlCSVXLSX.add(button_5);
+    JButton btnOpenPathToXLSX = new JButton("...");
+    btnOpenPathToXLSX.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        fc.setDialogTitle("Select the XLSX to convert");
+        txtXLSXFile.setText(getSelectedFileOrFolder(false));
+      }
+    });
+    btnOpenPathToXLSX.setBounds(575, 99, 55, 23);
+    pnlCSVXLSX.add(btnOpenPathToXLSX);
 
     JLabel lblXlsxTemplateFile = new JLabel("XLSX template file");
     lblXlsxTemplateFile.setFont(new Font("Tahoma", Font.BOLD, 12));
@@ -184,19 +270,25 @@ public class Main {
     txtXLSXTemplateFile.setBounds(148, 129, 417, 20);
     pnlCSVXLSX.add(txtXLSXTemplateFile);
 
-    JButton button_6 = new JButton("...");
-    button_6.setBounds(575, 128, 55, 23);
-    pnlCSVXLSX.add(button_6);
+    JButton btnOpenXLSXTemplateFile = new JButton("...");
+    btnOpenXLSXTemplateFile.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        fc.setDialogTitle("Select the XLSX conversion template");
+        txtXLSXTemplateFile.setText(getSelectedFileOrFolder(false));
+      }
+    });
+    btnOpenXLSXTemplateFile.setBounds(575, 128, 55, 23);
+    pnlCSVXLSX.add(btnOpenXLSXTemplateFile);
 
     JLabel lblConversionOutput = new JLabel("Conversion output");
     lblConversionOutput.setFont(new Font("Tahoma", Font.PLAIN, 18));
     lblConversionOutput.setBounds(10, 189, 195, 20);
     pnlCSVXLSX.add(lblConversionOutput);
 
-    JButton btnNewButton_1 = new JButton("Start conversion");
-    btnNewButton_1.setFont(new Font("Tahoma", Font.PLAIN, 20));
-    btnNewButton_1.setBounds(6, 432, 302, 57);
-    pnlCSVXLSX.add(btnNewButton_1);
+    JButton btnStartConversion = new JButton("Start conversion");
+    btnStartConversion.setFont(new Font("Tahoma", Font.PLAIN, 20));
+    btnStartConversion.setBounds(6, 432, 302, 57);
+    pnlCSVXLSX.add(btnStartConversion);
 
     txtConversionOutput = new JTextField();
     txtConversionOutput.setForeground(Color.WHITE);
@@ -220,12 +312,12 @@ public class Main {
 
     JLabel lblProductsFolder = new JLabel("Products folder");
     lblProductsFolder.setFont(new Font("Tahoma", Font.BOLD, 12));
-    lblProductsFolder.setBounds(10, 114, 120, 14);
+    lblProductsFolder.setBounds(10, 92, 120, 14);
     pnlCalibration.add(lblProductsFolder);
 
     JLabel lblMdFolder = new JLabel("MD folder");
     lblMdFolder.setFont(new Font("Tahoma", Font.BOLD, 12));
-    lblMdFolder.setBounds(10, 139, 85, 14);
+    lblMdFolder.setBounds(10, 117, 85, 14);
     pnlCalibration.add(lblMdFolder);
 
     JLabel lblValuationDate = new JLabel("Valuation date");
@@ -233,19 +325,14 @@ public class Main {
     lblValuationDate.setBounds(164, 357, 130, 14);
     pnlCalibration.add(lblValuationDate);
 
-    JLabel lblPathToPricingData = new JLabel("Path to data");
-    lblPathToPricingData.setFont(new Font("Tahoma", Font.BOLD, 12));
-    lblPathToPricingData.setBounds(10, 89, 120, 14);
-    pnlCalibration.add(lblPathToPricingData);
-
     JLabel lblFixingFile = new JLabel("Fixing file");
     lblFixingFile.setFont(new Font("Tahoma", Font.BOLD, 12));
-    lblFixingFile.setBounds(10, 164, 120, 14);
+    lblFixingFile.setBounds(10, 142, 120, 14);
     pnlCalibration.add(lblFixingFile);
 
     JLabel lblIssuerCurveFile = new JLabel("Issuer curve file prefix");
     lblIssuerCurveFile.setFont(new Font("Tahoma", Font.BOLD, 12));
-    lblIssuerCurveFile.setBounds(10, 189, 158, 14);
+    lblIssuerCurveFile.setBounds(10, 167, 158, 14);
     pnlCalibration.add(lblIssuerCurveFile);
 
     JLabel lblResultFilePrefix = new JLabel("Result file prefix");
@@ -254,34 +341,29 @@ public class Main {
     pnlCalibration.add(lblResultFilePrefix);
 
     JLabel lblItsATrap = new JLabel(
-        "<HTML><blink>IT'S A TRAP!!!!!!<br></blink>\r\n<br>\r\n1.&nbsp;Date format: YYYYMMDD, \te.g. 19120623, 19540607, 20151214<br>\r\n2.&nbsp;Good filename: ISSUER_CURVES - FSPC MEAN (EUR II) - 20150331.xlsx<br>\r\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Bad filename: ISSUER_CURVES - FSPC MEAN - 20150331 - (EUR II).xlsx<br>");
+        "<HTML>IT'S A TRAP!!!!!!<br>\r\n<br>\r\n1.&nbsp;Date format: YYYYMMDD, \te.g. 19120623, 19540607, 20151214<br>\r\n2.&nbsp;Good filename: ISSUER_CURVES - FSPC MEAN (EUR II) - 20150331.xlsx<br>\r\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Bad filename: ISSUER_CURVES - FSPC MEAN - 20150331 - (EUR II).xlsx<br>");
     lblItsATrap.setFont(new Font("Tahoma", Font.BOLD, 12));
-    lblItsATrap.setBounds(56, 214, 541, 96);
+    lblItsATrap.setBounds(56, 204, 541, 106);
     pnlCalibration.add(lblItsATrap);
-
-    txtPathToPricingData = new JTextField();
-    txtPathToPricingData.setBounds(106, 86, 455, 20);
-    pnlCalibration.add(txtPathToPricingData);
-    txtPathToPricingData.setColumns(10);
 
     txtProductsFolder = new JTextField();
     txtProductsFolder.setColumns(10);
-    txtProductsFolder.setBounds(126, 111, 435, 20);
+    txtProductsFolder.setBounds(126, 89, 435, 20);
     pnlCalibration.add(txtProductsFolder);
 
     txtMDFolder = new JTextField();
     txtMDFolder.setColumns(10);
-    txtMDFolder.setBounds(96, 136, 465, 20);
+    txtMDFolder.setBounds(96, 114, 465, 20);
     pnlCalibration.add(txtMDFolder);
 
     txtFixingFile = new JTextField();
     txtFixingFile.setColumns(10);
-    txtFixingFile.setBounds(82, 161, 479, 20);
+    txtFixingFile.setBounds(82, 139, 479, 20);
     pnlCalibration.add(txtFixingFile);
 
     txtIssuerCurveFile = new JTextField();
     txtIssuerCurveFile.setColumns(10);
-    txtIssuerCurveFile.setBounds(171, 186, 390, 20);
+    txtIssuerCurveFile.setBounds(171, 164, 390, 20);
     pnlCalibration.add(txtIssuerCurveFile);
 
     txtResultFilePrefix = new JTextField();
@@ -289,27 +371,75 @@ public class Main {
     txtResultFilePrefix.setBounds(133, 321, 428, 20);
     pnlCalibration.add(txtResultFilePrefix);
 
-    JButton btnNewButton = new JButton("321");
-    btnNewButton.setBounds(571, 85, 55, 23);
-    pnlCalibration.add(btnNewButton);
+    JButton btnOpenProductsFolder = new JButton("...");
+    btnOpenProductsFolder.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        fc.setDialogTitle("Select the path to products folder");
+        txtProductsFolder.setText(getSelectedFileOrFolder(false));
+      }
+    });
+    btnOpenProductsFolder.setBounds(571, 88, 55, 23);
+    pnlCalibration.add(btnOpenProductsFolder);
 
-    JButton button = new JButton("...");
-    button.setBounds(571, 110, 55, 23);
-    pnlCalibration.add(button);
+    JButton btnOpenMDFolder = new JButton("...");
+    btnOpenMDFolder.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        fc.setDialogTitle("Select the path to market data");
+        txtMDFolder.setText(getSelectedFileOrFolder(true));
+      }
+    });
+    btnOpenMDFolder.setBounds(571, 113, 55, 23);
+    pnlCalibration.add(btnOpenMDFolder);
 
-    JButton button_1 = new JButton("...");
-    button_1.setBounds(571, 135, 55, 23);
-    pnlCalibration.add(button_1);
-
-    JButton button_2 = new JButton("...");
-    button_2.setBounds(571, 160, 55, 23);
-    pnlCalibration.add(button_2);
+    JButton btnOpenFixingFile = new JButton("...");
+    btnOpenFixingFile.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        fc.setDialogTitle("Select the file with fixings");
+        txtFixingFile.setText(getSelectedFileOrFolder(false));
+      }
+    });
+    btnOpenFixingFile.setBounds(571, 138, 55, 23);
+    pnlCalibration.add(btnOpenFixingFile);
 
     JButton btnStopPricing = new JButton("Stop pricing");
     btnStopPricing.setBounds(10, 428, 130, 62);
     pnlCalibration.add(btnStopPricing);
 
     JButton btnStartPricing = new JButton("Start pricing");
+    btnStartPricing.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        String productsFolder = txtProductsFolder.getText();
+        String mdFolder = txtMDFolder.getText();
+        String fixingFile = txtFixingFile.getText();
+        String issuserCUrvePrefix = txtIssuerCurveFile.getText();
+        String resFilePrefix = txtResultFilePrefix.getText();
+
+        String valuationDate = new SimpleDateFormat("yyyy-MM-dd")
+            .format(dtpValuationDate.getValue());
+
+        List<String> currencies = new ArrayList<String>();
+
+        if (chbEur.isSelected())
+          currencies.add("EUR");
+
+        if (chbGbp.isSelected())
+          currencies.add("GBP");
+
+        if (chbJpy.isSelected())
+          currencies.add("JPY");
+
+        if (chbUsd.isSelected())
+          currencies.add("USD");
+
+        try {
+          if (Validator.validateValuationInput(productsFolder, mdFolder, fixingFile, issuserCUrvePrefix, 
+              resFilePrefix, valuationDate, currencies)) {
+            
+          }
+        } catch (Exception ex) {
+        }
+      }
+    });
     btnStartPricing.setBounds(10, 359, 130, 62);
     pnlCalibration.add(btnStartPricing);
 
@@ -320,30 +450,31 @@ public class Main {
     panel.setBounds(330, 374, 231, 32);
     pnlCalibration.add(panel);
 
-    JCheckBox chckbxEur = new JCheckBox("EUR");
-    panel.add(chckbxEur);
+    chbEur = new JCheckBox("EUR");
+    panel.add(chbEur);
 
-    JCheckBox chckbxGbp = new JCheckBox("GBP");
-    panel.add(chckbxGbp);
+    chbGbp = new JCheckBox("GBP");
+    panel.add(chbGbp);
 
-    JCheckBox chckbxJpy = new JCheckBox("JPY");
-    panel.add(chckbxJpy);
+    chbJpy = new JCheckBox("JPY");
+    panel.add(chbJpy);
 
-    JCheckBox chckbxUsd = new JCheckBox("USD");
-    panel.add(chckbxUsd);
+    chbUsd = new JCheckBox("USD");
+    panel.add(chbUsd);
 
     JLabel lblValuationCurrencies = new JLabel("Valuation currencies");
     lblValuationCurrencies.setFont(new Font("Tahoma", Font.BOLD, 12));
     lblValuationCurrencies.setBounds(329, 356, 130, 14);
     pnlCalibration.add(lblValuationCurrencies);
 
-    JSpinner spinner = new JSpinner();
-    spinner.setModel(new SpinnerDateModel(new Date(), null, null,
+    dtpValuationDate = new JSpinner();
+    dtpValuationDate.setModel(new SpinnerDateModel(new Date(), null, null,
         Calendar.DAY_OF_WEEK_IN_MONTH));
-    spinner.setBounds(164, 382, 108, 20);
-    JSpinner.DateEditor de = new JSpinner.DateEditor(spinner, "dd-MMM-yyyy");
-    spinner.setEditor(de);
-    pnlCalibration.add(spinner);
+    dtpValuationDate.setBounds(164, 382, 108, 20);
+    JSpinner.DateEditor de = new JSpinner.DateEditor(dtpValuationDate,
+        "dd-MMM-yyyy");
+    dtpValuationDate.setEditor(de);
+    pnlCalibration.add(dtpValuationDate);
 
     JPanel pnlConfigurationPanel = new JPanel();
     splitPane.setRightComponent(pnlConfigurationPanel);
@@ -371,8 +502,30 @@ public class Main {
     pnlConfigurationPanel.add(btnDelete);
 
     JButton btnEcit = new JButton("Exit");
+    btnEcit.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        System.exit(0);
+      }
+    });
     btnEcit.setBounds(524, 5, 105, 68);
     pnlConfigurationPanel.add(btnEcit);
     splitPane.setDividerLocation(530);
+  }
+
+  private String getSelectedFileOrFolder(boolean isFolder) {
+    String path = "";
+
+    if (isFolder) {
+      fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+      fc.setAcceptAllFileFilterUsed(false);
+    }
+
+    int returnVal = fc.showOpenDialog(frmThething);
+
+    if (returnVal == JFileChooser.APPROVE_OPTION) {
+      path = fc.getSelectedFile().getAbsolutePath();
+    }
+
+    return path;
   }
 }
