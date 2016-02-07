@@ -27,6 +27,7 @@ import javax.swing.JTextField;
 import javax.swing.SpinnerDateModel;
 import javax.swing.border.LineBorder;
 
+import net.finmath.applications.spreadsheets.CalibrateCCSCurveSheets;
 import net.finmath.applications.spreadsheets.CalibrateCurveSheets;
 
 public class Main {
@@ -159,7 +160,7 @@ public class Main {
 
         try {
           if (Validator.validateCalibrationInput(pathToData, true))
-            CalibrateCurveSheets.main(new String[] { pathToData });
+            CalibrateCCSCurveSheets.main(new String[] { pathToData });
         } catch (Exception ex) {
         }
       }
