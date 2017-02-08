@@ -7,21 +7,31 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
@@ -33,10 +43,21 @@ import javax.swing.border.LineBorder;
 import net.finmath.applications.spreadsheets.CSV2XLSX;
 import net.finmath.applications.spreadsheets.CalibrateCCSCurveSheets;
 import net.finmath.applications.spreadsheets.CalibrateCurveSheets;
+
+import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
+
+import de.scdm.eadbdataexporter.model.ExportEadbDataModel;
+import de.scdm.eadbdataparser.EadbDataParser;
+import de.scdm.entities.EadbDataEntity;
+import de.scdm.entities.WmDataEntity;
+import de.scdm.wmdataexporter.WmDataExporter;
+import de.scdm.wmdataexporter.model.ExportWmDataModel;
+import de.scdm.wmdataimporter.WmDataImporter;
 import thething.util.UIOutputStream;
 import thething.util.Validator;
-
-import javax.swing.JScrollPane;
 
 public class Main {
 
@@ -59,6 +80,16 @@ public class Main {
   private JSpinner dtpValuationDate;
 
   private final JFileChooser fc = new JFileChooser();
+  
+  // Data parsing tab elements
+  private JSpinner dtpParsingDate;
+  private JTextArea txtAreaFilesList;
+  private LinkedList<String> parsingFiles = new LinkedList<String>();
+  private StringBuilder parsingFilesBuilder = new StringBuilder();
+  private JLabel lblStatus = new JLabel();
+  private JPanel pnlDataParsing = new JPanel();
+
+  private static DateTimeFormatter dtf = DateTimeFormat.forPattern("yyyy-MM-dd");
 
   /**
    * Launch the application.
@@ -538,6 +569,233 @@ public class Main {
     btnEcit.setBounds(524, 5, 105, 68);
     pnlConfigurationPanel.add(btnEcit);
     splitPane.setDividerLocation(530);
+
+    // ---------------------------------------------------------------
+    // DATA PARSING TAB ----------------------------------------------
+    // ---------------------------------------------------------------
+
+    // Adding tab
+    pnlDataParsing = new JPanel();
+    pnlDataParsing.addPropertyChangeListener(new PropertyChangeListener() {
+      
+      public void propertyChange(PropertyChangeEvent evt) {
+        // TODO Auto-generated method stub
+        
+      }
+    });
+    tabbedPane.addTab("Data Parsing", null, pnlDataParsing, null);
+    pnlDataParsing.setLayout(null);
+
+    // File type selection
+    JLabel lblFileType = new JLabel("File type:");
+    lblFileType.setFont(new Font("Tahoma", Font.BOLD, 16));
+    lblFileType.setBounds(22, 12, 81, 24);
+    pnlDataParsing.add(lblFileType);
+
+    final DefaultComboBoxModel cbxModelFileType = new DefaultComboBoxModel();
+    cbxModelFileType.addElement("");
+    cbxModelFileType.addElement("EADB");
+    cbxModelFileType.addElement("WM");
+
+    final JComboBox cbxFileType = new JComboBox(cbxModelFileType);
+    cbxFileType.setSelectedIndex(0);
+    cbxFileType.setBounds(110, 12, 80, 24);
+    pnlDataParsing.add(cbxFileType);
+
+    // Date selection
+    JLabel lblSelectDate = new JLabel("Select date:");
+    lblSelectDate.setFont(new Font("Tahoma", Font.BOLD, 16));
+    lblSelectDate.setBounds(220, 12, 104, 24);
+    pnlDataParsing.add(lblSelectDate);
+
+    dtpParsingDate = new JSpinner();
+    dtpParsingDate.setModel(new SpinnerDateModel(new Date(), null, null, Calendar.DAY_OF_WEEK_IN_MONTH));
+    dtpParsingDate.setEditor(de);
+    dtpParsingDate.setBounds(330, 12, 120, 24);
+    pnlDataParsing.add(dtpParsingDate);
+
+    // Add file
+    JButton btnAddFile = new JButton("Add file");
+    btnAddFile.setBounds(508, 12, 120, 24);
+    btnAddFile.addActionListener(new ActionListener() {
+
+      public void actionPerformed(ActionEvent e) {
+        fc.setDialogTitle("Select file");
+        addFile(getSelectedFileOrFolder(false));
+      }
+    });
+    pnlDataParsing.add(btnAddFile);
+
+    // Files list
+    txtAreaFilesList = new JTextArea();
+    txtAreaFilesList.setEditable(false);
+    JScrollPane scrollPaneFilesList = new JScrollPane(txtAreaFilesList);
+    scrollPaneFilesList.setBounds(26, 50, 600, 230);
+    pnlDataParsing.add(scrollPaneFilesList);
+
+    // Remove last added file
+    JButton btnRemoveLastAddedFile = new JButton("Remove last added file");
+    btnRemoveLastAddedFile.setBounds(22, 290, 200, 24);
+    btnRemoveLastAddedFile.addActionListener(new ActionListener() {
+
+      public void actionPerformed(ActionEvent e) {
+        removeLastFile();
+      }
+    });
+    pnlDataParsing.add(btnRemoveLastAddedFile);
+
+    // Clear files list
+    JButton btnClearFilesList = new JButton("Clear files list");
+    btnClearFilesList.setBounds(230, 290, 130, 24);
+    btnClearFilesList.addActionListener(new ActionListener() {
+
+      public void actionPerformed(ActionEvent e) {
+        clearFilesList();
+      }
+    });
+    pnlDataParsing.add(btnClearFilesList);
+
+    // Export path
+    JLabel lblExportFilePath = new JLabel("Export file:");
+    lblExportFilePath.setFont(new Font("Tahoma", Font.BOLD, 16));
+    lblExportFilePath.setBounds(22, 340, 100, 24);
+    pnlDataParsing.add(lblExportFilePath);
+
+    final JTextField txtExportDirectory = new JTextField();
+    txtExportDirectory.setBounds(128, 340, 380, 24);
+    pnlDataParsing.add(txtExportDirectory);
+
+    JButton btnBrowseExportDirectory = new JButton("Browse");
+    btnBrowseExportDirectory.setBounds(520, 340, 100, 24);
+    btnBrowseExportDirectory.addActionListener(new ActionListener() {
+
+      public void actionPerformed(ActionEvent e) {
+        fc.setDialogTitle("Export directory chooser");
+        txtExportDirectory.setText(getSelectedFileOrFolder(true));
+      }
+    });
+    pnlDataParsing.add(btnBrowseExportDirectory);
+
+    // Start Process
+    JButton btnStartDataParsing = new JButton("Start");
+    btnStartDataParsing.setBounds(22, 380, 150, 48);
+    btnStartDataParsing.addActionListener(new ActionListener() {
+
+      public void actionPerformed(ActionEvent e) {
+        try {
+          lblStatus.setText("");
+          String fileType = cbxFileType.getSelectedItem().toString();
+          if (StringUtils.isBlank(fileType))
+            throw new Exception("File type not selected");
+
+          String asOfDate = new SimpleDateFormat("yyyy-MM-dd").format(dtpParsingDate.getValue());
+
+          String exportDirectory = txtExportDirectory.getText();
+          if (StringUtils.isBlank(exportDirectory))
+            throw new Exception("Export directory not selected");
+
+          ListIterator<String> iterator = parsingFiles.listIterator();
+
+          if (StringUtils.equalsIgnoreCase(fileType, "EADB")) {
+            startEadbDataParsing(asOfDate, exportDirectory, iterator);
+          } else if (StringUtils.equalsIgnoreCase(fileType, "WM")) {
+            startWmDataParsing(asOfDate, exportDirectory, iterator);
+          }
+
+          lblStatus.setText("<html><font color='green'>" + fileType + " data successfuly parsed</font></html>");
+        } catch (Exception ex) {
+          lblStatus.setText("<html><font color='red'>Error: </font>" + ex.getLocalizedMessage()
+              + "</html>");
+        }
+      }
+    });
+    pnlDataParsing.add(btnStartDataParsing);
+
+    lblStatus.setBounds(22, 450, 600, 24);
+    pnlDataParsing.add(lblStatus);
+  }
+
+  private void startEadbDataParsing(String asOfDate, String exportDirectory, ListIterator<String> iterator)
+      throws Exception {
+    Map<String, EadbDataEntity> entitiesMap = new HashMap<String, EadbDataEntity>();
+    EadbDataParser eadbDataParser = new EadbDataParser();
+    ExportEadbDataModel model = new ExportEadbDataModel();
+
+    while (iterator.hasNext()) {
+      try {
+        entitiesMap.putAll(eadbDataParser.getCleanDataAsMap(asOfDate, iterator.next()));
+      } catch (Exception e) {
+        throw e;
+      }
+    }
+
+    File outputFile = new File(exportDirectory + File.separator + "EadbData_" + asOfDate + ".xls");
+    HSSFWorkbook workbook = model.extractData(dtf.parseMutableDateTime(asOfDate), entitiesMap.values());
+    workbook.write(new FileOutputStream(outputFile));
+  }
+
+  private void startWmDataParsing(String asOfDate, String exportDirectory, ListIterator<String> iterator)
+      throws Exception {
+    Map<String, WmDataEntity> entitiesMap = new HashMap<String, WmDataEntity>();
+    WmDataImporter wmDataImporter = new WmDataImporter();
+    ExportWmDataModel model = new ExportWmDataModel();
+
+    while (iterator.hasNext()) {
+      try {
+        entitiesMap.putAll(wmDataImporter.getCleanDataAsMap(asOfDate, iterator.next(), exportDirectory));
+      } catch (Exception e) {
+        throw e;
+      }
+    }
+
+    File outputFile = new File(exportDirectory + File.separator + "WmData_" + asOfDate + ".xls");
+    HSSFWorkbook workbook = model.extractData(dtf.parseMutableDateTime(asOfDate), false, entitiesMap.values());
+    workbook.write(new FileOutputStream(outputFile));
+  }
+
+  private class DataParser<T> {
+    Map<String, T> dataMap = new HashMap<String, T>();
+    
+
+    public Map<String, T> getDataMap() {
+      return dataMap;
+    }
+
+    
+  }
+
+  private void clearFilesList() {
+    parsingFiles.clear();
+    parsingFilesBuilder.setLength(0);
+    txtAreaFilesList.setText(parsingFilesBuilder.toString());
+  }
+
+  private void removeLastFile() {
+    if (!parsingFiles.isEmpty()) {
+      parsingFiles.removeLast();
+
+      if (parsingFiles.isEmpty()) {
+        parsingFilesBuilder.setLength(0);
+      } else {
+        parsingFilesBuilder.delete(0, parsingFilesBuilder.indexOf("\n") + 1);
+      }
+
+      txtAreaFilesList.setText(parsingFilesBuilder.toString());
+    }
+  }
+
+  private void addFile(String fileStr) {
+
+    if (!StringUtils.isBlank(fileStr)) {
+      parsingFiles.add(fileStr);
+
+      if (parsingFilesBuilder.length() > 0) {
+        parsingFilesBuilder.insert(0, "\n");
+      }
+
+      parsingFilesBuilder.insert(0, parsingFiles.size() + ". " + parsingFiles.getLast());
+      txtAreaFilesList.setText(parsingFilesBuilder.toString());
+    }
   }
 
   private String getSelectedFileOrFolder(boolean isFolder) {
